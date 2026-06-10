@@ -2,20 +2,22 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Criar usuário não-root
 RUN addgroup --system flaskgroup && adduser --system flaskuser --ingroup flaskgroup
 
+# Instalar dependências
 COPY requirements.txt .
-
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . /app
+# Copiar projeto
+COPY . .
 
-RUN mkdir -p /app/data && chown -R flaskuser:flaskgroup /app/data
+# Criar diretório do banco
+RUN mkdir -p /app/data && chown -R flaskuser:flaskgroup /app
 
-RUN chown -R flaskuser:flaskgroup /app
-
+# Trocar usuário
 USER flaskuser
 
 EXPOSE 5000
 
-CMD ["python", "run.py"]
+CMD ["python", "todo_project/run.py"]

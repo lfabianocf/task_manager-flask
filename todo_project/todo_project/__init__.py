@@ -8,14 +8,6 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = '45cf93c4d41348cd9980674ade9a7356'
 
 
-# BASE_DIR = "/app"
-
-# INSTANCE_DIR = os.path.join(BASE_DIR, "instance")
-# os.makedirs(INSTANCE_DIR, exist_ok=True)
-
-# app.config['SQLALCHEMY_DATABASE_URI'] = \
-#     "sqlite:///" + os.path.join(INSTANCE_DIR, "site.db")
-
 INSTANCE_DIR = "/app/data"
 os.makedirs(INSTANCE_DIR, exist_ok=True)
 
