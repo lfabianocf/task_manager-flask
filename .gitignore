@@ -55,6 +55,11 @@ coverage.xml
 *.mo
 *.pot
 
+# Base data files
+*.db
+data/
+todo_project/data/
+
 # Django stuff:
 *.log
 local_settings.py
