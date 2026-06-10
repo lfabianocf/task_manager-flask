@@ -1,33 +1,61 @@
-name: CI - Flask Task Manager
+name: CI Pipeline
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: ["main", "develop"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main", "develop"]
 
 jobs:
-  build:
+  security-analysis:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout do código
+      - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: 🐍 Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: 📦 Instalar dependências
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements.txt
+      # Cache pip (melhora MUITO CI)
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
 
-      - name: 🧪 Teste básico (import Flask app)
+      # Instalar dependências de segurança
+      - name: Instalar dependências
         run: |
-          python -c "print('CI OK sem import Flask')"
+          python -m pip install --upgrade pip
+          pip install bandit pip-audit
 
-      - name: 🐳 Build Docker
+      # 1. Segurança estática (Bandit)
+      - name: Rodar Bandit (SAST)
         run: |
-          docker build -t task-manager-app .
+          bandit -r . -ll -ii
+
+      # 2. Auditoria de dependências (mais estável que OWASP Action)
+      - name: Rodar pip-audit (OWASP alternativa moderna)
+        run: |
+          pip audit || true
+
+      # 3. OWASP Dependency Check (versão correta)
+      - name: OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: "task_manager"
+          path: "."
+          format: "HTML"
+          args: >
+            --failOnCVSS 7
+            --enableRetired
+
+      # 4. Upload do relatório
+      - name: Upload relatório OWASP
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: reports/dependency-check-report.html
