@@ -7,4 +7,5 @@ services:
       - ./data:/app/data
     environment:
       - PYTHONPATH=/app
-      - FLASK_APP=todo_project/run.py
+      - FLASK_APP=todo_project:app
+      - FLASK_DEBUG=1
