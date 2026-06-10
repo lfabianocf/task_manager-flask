@@ -91,7 +91,15 @@ jobs:
 
       - name: Healthcheck Flask
         run: |
-          curl --fail http://localhost:5000 || exit 1
+          echo "Waiting for app..."
+
+          for i in {1..30}; do
+            curl -s http://localhost:5000 && exit 0
+            sleep 2
+          done
+
+          echo "App failed to start"
+          exit 1
 
   # =========================
   # 🛡️ 4. DAST - OWASP ZAP
