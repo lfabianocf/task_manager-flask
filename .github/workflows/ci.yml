@@ -87,6 +87,11 @@ jobs:
         run: |
           docker compose up -d
 
+      - name: Debug - Listar containers
+        run: |
+          docker ps -a
+          docker compose logs web
+
       - name: Healthcheck Flask
         run: |
           echo "Waiting for app..."
