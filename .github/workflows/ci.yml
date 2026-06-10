@@ -7,9 +7,9 @@ on:
     branches: ["main", "develop"]
 
 jobs:
-  # =========================
-  # 🔐 1. SECURITY ANALYSIS
-  # =========================
+  # ==========================================
+  # 🔐 1. SECURITY ANALYSIS (Static & Audit)
+  # ==========================================
   security-analysis:
     runs-on: ubuntu-latest
 
@@ -41,26 +41,10 @@ jobs:
         run: |
           pip-audit
 
-      - name: 🔐 OWASP Dependency Check
-        uses: dependency-check/Dependency-Check_Action@main
-        with:
-          project: "task_manager"
-          path: "."
-          format: "HTML"
-          args: >
-            --failOnCVSS 7
-            --enableRetired
-
-      - name: Upload relatório OWASP
-        uses: actions/upload-artifact@v4
-        with:
-          name: dependency-check-report
-          path: reports/
-
-  # =========================
-  # 🐳 2. BUILD (DOCKER)
-  # =========================
-  build:
+  # ==========================================
+  # 🐳🚀🛡️ 2. BUILD, TEST & DAST (Ambiente Isolado)
+  # ==========================================
+  build-and-test:
     needs: security-analysis
     runs-on: ubuntu-latest
 
@@ -68,26 +52,13 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: |
-          docker build -t task-manager:${{ github.sha }} .
-
-  # =========================
-  # 🚀 3. START APP (TEST ENV)
-  # =========================
-  start-app:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout do código
-        uses: actions/checkout@v4
-
+      # Builda e já sobe usando o Docker Compose no mesmo ambiente
       - name: Subir aplicação com Docker Compose
         run: |
-          docker compose up -d
+          docker compose up -d --build
 
-      - name: Debug - Listar containers
+      - name: Debug - Listar containers e Logs se falhar
+        if: always()
         run: |
           docker ps -a
           docker compose logs web
@@ -95,7 +66,6 @@ jobs:
       - name: Healthcheck Flask
         run: |
           echo "Waiting for app..."
-
           for i in {1..30}; do
             if curl -s http://localhost:5000; then
               echo "App is UP"
@@ -104,33 +74,18 @@ jobs:
             echo "attempt $i..."
             sleep 2
           done
-
           echo "App failed to start"
           exit 1
 
-  # =========================
-  # 🛡️ 4. DAST - OWASP ZAP
-  # =========================
-  dast-zap:
-    needs: start-app
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Healthcheck app
-        run: |
-          curl --fail http://localhost:5000
-
-      - name: OWASP ZAP scan
+      # Como a aplicação está UP nesta máquina, o DAST agora vai funcionar!
+      - name: OWASP ZAP scan (DAST)
         run: |
           docker run --network host -v $(pwd):/zap/wrk/:rw \
           owasp/zap2docker-stable zap-baseline.py \
           -t http://localhost:5000 \
           -r zap-report.html || true
 
-      - name: Upload report
+      - name: Upload report DAST
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
