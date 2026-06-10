@@ -83,8 +83,18 @@ jobs:
 
       - name: Rodar OWASP ZAP (DAST)
         run: |
-          docker run --network host -v $(pwd):/zap/wrk/:rw \
+          mkdir -p $(pwd)/zap_results
+          sudo chmod 777 $(pwd)/zap_results
+
+          # Mapeando a subpasta específica para o volume do ZAP
+          docker run --network host -v $(pwd)/zap_results:/zap/wrk/:rw \
             ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py \
             -t http://localhost:5000 \
             -r /zap/wrk/zap-report.html \
             -J /zap/wrk/zap-report.json || true
+      
+      - name: Upload Relatórios de Segurança ZAP
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-security-reports
+          path: zap_results/zap-report.*
