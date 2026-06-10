@@ -86,15 +86,17 @@ jobs:
       - name: Subir aplicação com Docker Compose
         run: |
           docker compose up -d
-          echo "Waiting app startup..."
-          sleep 15
 
       - name: Healthcheck Flask
         run: |
           echo "Waiting for app..."
 
           for i in {1..30}; do
-            curl -s http://localhost:5000 && exit 0
+            if curl -s http://localhost:5000; then
+              echo "App is UP"
+              exit 0
+            fi
+            echo "attempt $i..."
             sleep 2
           done
 
