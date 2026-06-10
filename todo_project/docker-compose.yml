@@ -1,0 +1,10 @@
+services:
+  web:
+    build: .
+    container_name: task_manager_app
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    restart: always
