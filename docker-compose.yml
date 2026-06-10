@@ -6,7 +6,7 @@ services:
     volumes:
       - ./data:/app/data
     environment:
-      # Apontar para a raiz (/app) permite que o Python encontre qualquer subpasta
       - PYTHONPATH=/app
-    # Execução baseada na estrutura que vimos no seu comando tree
-    command: python todo_project/todo_project/run.py
+    # Este comando vai listar os arquivos e depois falhar, 
+    # permitindo que vejamos a estrutura real no log do GitHub.
+    command: /bin/sh -c "ls -R /app && python todo_project/run.py"
