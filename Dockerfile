@@ -2,14 +2,15 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# O PYTHONPATH já aponta para /app, garantindo que o módulo 'todo_project' seja visível
 ENV PYTHONPATH=/app
-# Aponta diretamente para o arquivo run.py dentro do pacote
-ENV FLASK_APP=todo_project/run.py 
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copia todo o conteúdo do seu projeto
 COPY . .
 
-# Comando explícito chamando o arquivo configurado acima
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
+# Comando direto de execução (evita o CLI do Flask e executa a lógica do banco)
+# Ajuste o caminho abaixo caso o seu run.py não esteja na raiz do container
+CMD ["python", "todo_project/run.py"]

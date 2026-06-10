@@ -6,6 +6,7 @@ services:
     volumes:
       - ./data:/app/data
     environment:
+      # Apontar para a raiz (/app) permite que o Python encontre qualquer subpasta
       - PYTHONPATH=/app
-      - FLASK_APP=todo_project:app
-      - FLASK_DEBUG=1
+    # Execução baseada na estrutura que vimos no seu comando tree
+    command: python todo_project/todo_project/run.py
