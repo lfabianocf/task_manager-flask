@@ -59,3 +59,28 @@ jobs:
         with:
           name: dependency-check-report
           path: reports/
+
+dast-zap:
+  runs-on: ubuntu-latest
+
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Subir aplicação com Docker Compose
+      run: |
+        docker compose up -d
+        sleep 10
+
+    - name: Rodar OWASP ZAP Baseline Scan
+      run: |
+        docker run --network host -v $(pwd):/zap/wrk/:rw \
+        owasp/zap2docker-stable zap-baseline.py \
+        -t http://localhost:5000 \
+        -r zap-report.html || true
+
+    - name: Upload relatório ZAP
+      uses: actions/upload-artifact@v4
+      with:
+        name: zap-report
+        path: zap-report.html
