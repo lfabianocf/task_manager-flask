@@ -81,11 +81,10 @@ jobs:
           docker compose logs web
           exit 1
 
-      # Como a aplicação está UP nesta máquina, o DAST agora vai funcionar!
       - name: Rodar OWASP ZAP (DAST)
         run: |
           docker run --network host -v $(pwd):/zap/wrk/:rw \
             ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py \
-            -t http://localhost:5000 -g gen.conf \
-            -r zap-report.html \
-            -J zap-report.json || true
+            -t http://localhost:5000 \
+            -r /zap/wrk/zap-report.html \
+            -J /zap/wrk/zap-report.json || true
