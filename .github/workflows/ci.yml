@@ -1,0 +1,33 @@
+name: CI - Flask Task Manager
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout do código
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 📦 Instalar dependências
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 🧪 Teste básico (import Flask app)
+        run: |
+          python -c "from todo_project import app; print('App carregado com sucesso')"
+
+      - name: 🐳 Build Docker
+        run: |
+          docker build -t task-manager-app .
