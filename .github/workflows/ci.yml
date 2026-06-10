@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI-CD Production Pipeline
 
 on:
   push:
@@ -7,6 +7,9 @@ on:
     branches: ["main", "develop"]
 
 jobs:
+  # =========================
+  # 🔐 1. SECURITY ANALYSIS
+  # =========================
   security-analysis:
     runs-on: ubuntu-latest
 
@@ -19,31 +22,26 @@ jobs:
         with:
           python-version: "3.11"
 
-      # Cache pip (melhora MUITO CI)
       - name: Cache pip
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
 
-      # Instalar dependências de segurança
-      - name: Instalar dependências
+      - name: Instalar dependências de segurança
         run: |
-          python -m pip install --upgrade pip
+          pip install --upgrade pip
           pip install bandit pip-audit
 
-      # 1. Segurança estática (Bandit)
-      - name: Rodar Bandit (SAST)
+      - name: 🔐 Bandit (SAST)
         run: |
-          bandit -r . -ll -ii -s B104 || true
+          bandit -r . -ll -ii -s B104
 
-      # 2. Auditoria de dependências (mais estável que OWASP Action)
-      - name: Rodar pip-audit (OWASP alternativa moderna)
+      - name: 🔐 pip-audit (dependências)
         run: |
-          pip audit || true
+          pip-audit
 
-      # 3. OWASP Dependency Check (versão correta)
-      - name: OWASP Dependency Check
+      - name: 🔐 OWASP Dependency Check
         uses: dependency-check/Dependency-Check_Action@main
         with:
           project: "task_manager"
@@ -53,34 +51,81 @@ jobs:
             --failOnCVSS 7
             --enableRetired
 
-      # 4. Upload do relatório
       - name: Upload relatório OWASP
         uses: actions/upload-artifact@v4
         with:
           name: dependency-check-report
           path: reports/
 
-dast-zap:
-  runs-on: ubuntu-latest
+  # =========================
+  # 🐳 2. BUILD (DOCKER)
+  # =========================
+  build:
+    needs: security-analysis
+    runs-on: ubuntu-latest
 
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
 
-    - name: Subir aplicação com Docker Compose
-      run: |
-        docker compose up -d
-        sleep 10
+      - name: Build Docker image
+        run: |
+          docker build -t task-manager:${{ github.sha }} .
 
-    - name: Rodar OWASP ZAP Baseline Scan
-      run: |
-        docker run --network host -v $(pwd):/zap/wrk/:rw \
-        owasp/zap2docker-stable zap-baseline.py \
-        -t http://localhost:5000 \
-        -r zap-report.html || true
+  # =========================
+  # 🚀 3. START APP (TEST ENV)
+  # =========================
+  start-app:
+    needs: build
+    runs-on: ubuntu-latest
 
-    - name: Upload relatório ZAP
-      uses: actions/upload-artifact@v4
-      with:
-        name: zap-report
-        path: zap-report.html
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Subir aplicação com Docker Compose
+        run: |
+          docker compose up -d
+          echo "Waiting app startup..."
+          sleep 15
+
+      - name: Healthcheck Flask
+        run: |
+          curl --fail http://localhost:5000 || exit 1
+
+  # =========================
+  # 🛡️ 4. DAST - OWASP ZAP
+  # =========================
+  dast-zap:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t task-manager:ci .
+
+      - name: Run container
+        run: |
+          docker run -d -p 5000:5000 --name flask-app task-manager:ci
+          sleep 10
+
+      - name: Healthcheck
+        run: |
+          curl --fail http://localhost:5000
+
+      - name: OWASP ZAP scan
+        run: |
+          docker run --network host -v $(pwd):/zap/wrk/:rw \
+          owasp/zap2docker-stable zap-baseline.py \
+          -t http://localhost:5000 \
+          -r zap-report.html || true
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: zap-report.html
