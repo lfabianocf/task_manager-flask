@@ -74,7 +74,11 @@ jobs:
             echo "attempt $i..."
             sleep 2
           done
-          echo "App failed to start"
+          
+          echo "=================================================="
+          echo "🚨 APLICAÇÃO FALHOU! EXIBINDO LOGS DO CONTAINER: 🚨"
+          echo "=================================================="
+          docker compose logs web
           exit 1
 
       # Como a aplicação está UP nesta máquina, o DAST agora vai funcionar!
