@@ -3,14 +3,12 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
-from prometheus_flask_exporter import PrometheusMetrics
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '45cf93c4d41348cd9980674ade9a7356'
 
-metrics = PrometheusMetrics(app)
 
-# 🎛️ CONFIGURAÇÃO DINÂMICA DO BANCO DE DADOS
 # Se o arquivo de teste injetar 'TESTING = True', usamos um banco em memória
 if os.environ.get('FLASK_ENV') == 'testing' or app.config.get('TESTING'):
     app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///:memory:"
@@ -30,5 +28,5 @@ login_manager.login_message_category = 'danger'
 bcrypt = Bcrypt(app)
 
 # IMPORTAR ROTAS NO FINAL (DEPOIS DO APP EXISTIR)
-#import todo_project.routes  # noqa: E402,F401
-from . import routes  # noqa: E402,F401
+from todo_project import routes  # noqa: E402,F401
+# from . import routes  # noqa: E402,F401
