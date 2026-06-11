@@ -1,6 +1,12 @@
+import sys
+import os
 import pytest
-# Importa o app. Ajuste o caminho se o arquivo principal estiver em outra subpasta
-from task_manager_flask import app 
+
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+
+from todo_project.todo_project.app import app
 
 @pytest.fixture
 def client():

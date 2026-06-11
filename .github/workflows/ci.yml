@@ -19,21 +19,32 @@ jobs:
           # Adicione o '-r' para focar apenas no seu requirements.txt
           pip-audit -r requirements.txt
 
-  # 2. BUILD & TEST (CI - Integração Contínua)
-  build-and-test:
+  # 2. BUILD (Construção do ambiente)
+  build:
     needs: sast-analysis
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker compose up -d --build
-      - name: Executar Testes Automatizados
+      - name: Build dos Containers
+        run: docker compose up -d --build
+  
+  # 3. TEST (Integração Contínua)
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rodar Testes Automatizados
         run: |
+          # Re-sobe o container se necessário ou conecta ao existente
+          docker compose up -d
           docker compose exec -T web pip install pytest
-          docker compose exec -T web pytest tests/
+          docker compose exec -T web pytest tests/test_funcional.py
+  
 
-  # 3. DAST (Análise Dinâmica)
+  # 4. DAST (Análise Dinâmica)
   dast-analysis:
-    needs: build-and-test
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
