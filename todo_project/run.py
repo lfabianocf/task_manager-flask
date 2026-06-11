@@ -1,3 +1,4 @@
+import os
 from todo_project import app, db
 from flask import Response
 
@@ -20,6 +21,6 @@ if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
         port=5000,
-        debug=True
+        debug=os.environ.get("DEBUG", "False") == "True"
     )
     
