@@ -140,13 +140,15 @@ jobs:
           docker compose logs web
           exit 1
 
-      # 3. Agora o ZAP consegue achar o localhost:5000 porque o app está na mesma máquina!
+      # 3. Agora o ZAP consegue achar o localhost:5000 com permissão de escrita!
       - name: OWASP ZAP scan
         run: |
-          docker run --rm --network host -v $(pwd):/zap/wrk/:rw \
+          # 🌟 ADICIONADO: --user root para o Linux permitir a gravação do relatório
+          # 🌟 AJUSTADO: -r zap-report.html (o ZAP joga direto no seu $(pwd) através do volume)
+          docker run --rm --user root --network host -v $(pwd):/zap/wrk/:rw \
             ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
             -t http://localhost:5000 \
-            -r /zap/wrk/zap-report.html || true
+            -r zap-report.html || true
 
       # 4. Remove os containers para limpar a máquina após o teste
       - name: Stop containers
@@ -159,4 +161,4 @@ jobs:
         if: always()
         with:
           name: zap-report
-          path: zap-report.html
+          path: ./zap-report.html # 🌟 GARANTIDO: Busca o arquivo na raiz do workspace
