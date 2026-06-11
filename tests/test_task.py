@@ -2,24 +2,30 @@ import sys
 import os
 import pytest
 
+# 1. Garante que a raiz do projeto (task_manager-flask) está no PATH do Python
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-
-# 2. Insere a raiz no PATH do Python se ela já não estiver lá
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
-# Se dentro de todo_project você tem o arquivo app.py:
 
-try:
-    from todo_project.app import app
-except ModuleNotFoundError:
-    # Caso o todo_project já seja o próprio pacote
-    from todo_project import app
+# 2. Importa o app e o db do arquivo run.py que está dentro de todo_project
+from todo_project.run import app, db
 
 @pytest.fixture
 def client():
     app.config['TESTING'] = True
+    
+    # Cria o contexto do banco de dados antes do teste se necessário
+    with app.app_context():
+        if 'db' in globals():
+            db.create_all()
+            
     with app.test_client() as client:
         yield client
+        
+    # Limpa o banco após a execução do teste
+    with app.app_context():
+        if 'db' in globals():
+            db.drop_all()
 
 def test_task_exists():
     assert app is not None
