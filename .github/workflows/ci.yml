@@ -109,9 +109,9 @@ jobs:
           path: reports/
 
   # =========================
-  # 🚀 4. START APP
+  # 🛡️ 4. DAST - OWASP ZAP
   # =========================
-  start-app:
+  dast-zap:
     needs: build
     runs-on: ubuntu-latest
 
@@ -119,55 +119,44 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
+      # 1. Sobe o app na MESMA máquina onde o ZAP vai rodar
       - name: Subir aplicação com Docker Compose
         run: |
-          docker compose up -d
+          docker compose up -d --build
 
-      - name: Debug - Listar containers
-        run: |
-          docker ps -a
-          docker compose logs web
-
+      # 2. Aguarda o Flask inicializar completamente (Healthcheck interno)
       - name: Healthcheck Flask
         run: |
           echo "Waiting for app..."
-
           for i in {1..30}; do
-            if curl -s http://localhost:5000; then
-              echo "App is UP"
+            if curl -s http://localhost:5000 > /dev/null; then
+              echo "App is UP on localhost:5000!"
               exit 0
             fi
             echo "attempt $i..."
             sleep 2
           done
-
           echo "App failed to start"
+          docker compose logs web
           exit 1
 
-  # =========================
-  # 🛡️ 5. DAST - OWASP ZAP
-  # =========================
-  dast-zap:
-    needs: start-app
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Healthcheck app
-        run: |
-          curl --fail http://localhost:5000
-
+      # 3. Agora o ZAP consegue achar o localhost:5000 porque o app está na mesma máquina!
       - name: OWASP ZAP scan
         run: |
-          docker run --network host -v $(pwd):/zap/wrk/:rw \
-          owasp/zap2docker-stable zap-baseline.py \
-          -t http://localhost:5000 \
-          -r zap-report.html || true
+          docker run --rm --network host -v $(pwd):/zap/wrk/:rw \
+            ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+            -t http://localhost:5000 \
+            -r /zap/wrk/zap-report.html || true
 
+      # 4. Remove os containers para limpar a máquina após o teste
+      - name: Stop containers
+        if: always()
+        run: docker compose down
+
+      # 5. Salva o relatório gerado para você baixar na aba Actions
       - name: Upload report
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: zap-report
           path: zap-report.html
