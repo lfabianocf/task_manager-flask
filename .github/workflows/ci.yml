@@ -56,6 +56,14 @@ jobs:
       - name: Subir aplicação com Docker Compose
         run: |
           docker compose up -d --build
+      
+      # --- NOVA ETAPA 3: TESTES AUTOMATIZADOS ---
+      - name: Rodar Testes Automatizados (Pytest)
+        run: |
+          # Instala dependências de teste se necessário no ambiente do container
+          docker compose exec -T web pip install pytest
+          docker compose exec -T web pytest tests/
+          
 
       - name: Debug - Listar containers e Logs se falhar
         if: always()
