@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'task-manager'
+    metrics_path: '/metrics'  # 🌟 Corrigido: Rota padrão do exporter
+    static_configs:
+      # 🌟 Corrigido: Porta 9100 e rota de saída pelo host local
+      - targets: ['web:5000']

@@ -3,10 +3,40 @@ services:
     build: .
     ports:
       - "5000:5000"
+      - "9100:9100"  # Expondo a porta de métricas que configuramos no run.py
     volumes:
       - ./data:/app/data
     environment:
-      - PYTHONPATH=/app
-    # Este comando vai listar os arquivos e depois falhar, 
-    # permitindo que vejamos a estrutura real no log do GitHub.
-    command: /bin/sh -c "ls -R /app && python todo_project/run.py"
+      - PYTHONPATH=/app:/app/todo_project
+    networks:
+      - monitoramento_network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoramento_network
+    depends_on:
+      - web
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - monitoramento_network
+
+networks:
+  monitoramento_network:  # Criando a rede interna automaticamente para o grupo
+
+volumes:
+  grafana-storage:
