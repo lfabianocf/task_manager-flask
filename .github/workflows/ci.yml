@@ -8,6 +8,47 @@ on:
 
 jobs:
   # =========================
+  # 🐳 2. BUILD (DOCKER)
+  # =========================
+  build:
+    needs: build-analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t task-manager:${{ github.sha }} .
+
+  # =========================
+  # 🧪 2. TESTS
+  # =========================
+  test:
+    needs: test-app
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          run:n: |
+            pip install -r requirements.txt
+            pip install pytest
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -v
+
+  # =========================
   # 🔐 1. SECURITY ANALYSIS
   # =========================
   security-analysis:
@@ -58,22 +99,7 @@ jobs:
           path: reports/
 
   # =========================
-  # 🐳 2. BUILD (DOCKER)
-  # =========================
-  build:
-    needs: security-analysis
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout do código
-        uses: actions/checkout@v4
-
-      - name: Build Docker image
-        run: |
-          docker build -t task-manager:${{ github.sha }} .
-
-  # =========================
-  # 🚀 3. START APP (TEST ENV)
+  # 🚀 3. START APP
   # =========================
   start-app:
     needs: build
