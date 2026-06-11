@@ -39,7 +39,7 @@ jobs:
 
       - name: Run tests
         env:
-          PYTHONPATH: ${{ github.workspace }}
+          PYTHONPATH: ${{ github.workspace }}/todo_project
         run: |
           python -m pytest tests/ -v
 

@@ -2,33 +2,19 @@ import sys
 import os
 import pytest
 
-# Garante que a raiz do projeto (task_manager-flask) está no PATH do Python
+# 1. Encontra a pasta pai 'todo_project' dentro da raiz
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if ROOT_DIR not in sys.path:
-    sys.path.insert(0, ROOT_DIR)
+TODO_PAI = os.path.join(ROOT_DIR, 'todo_project')
 
-# Força a variável de ambiente de teste para o __init__.py ler
+# 2. Injeta essa pasta pai no PATH do Python
+if TODO_PAI not in sys.path:
+    sys.path.insert(0, TODO_PAI)
+
 os.environ['FLASK_ENV'] = 'testing'
 
-# Importa o app e o db do arquivo run.py que está dentro de todo_project
-#from todo_project import app, db
+from todo_project import app, db
 
-# 2. Tenta o import com um bloco de Debug robusto
-try:
-    from todo_project import app, db
-except ImportError as e:
-    print("\n" + "="*50)
-    print("🚨 DEBUG DE AMBIENTE GITHUB ACTIONS 🚨")
-    print(f"Diretório Atual de Execução: {os.getcwd()}")
-    print(f"Conteúdo da Raiz do Projeto: {os.listdir(ROOT_DIR)}")
-    
-    todo_path = os.path.join(ROOT_DIR, 'todo_project')
-    if os.path.exists(todo_path):
-        print(f"Conteúdo de todo_project/: {os.listdir(todo_path)}")
-    else:
-        print("A pasta todo_project/ NÃO FOI ENCONTRADA na raiz!")
-    print("="*50 + "\n")
-    raise e
+
 
 @pytest.fixture
 def client():
