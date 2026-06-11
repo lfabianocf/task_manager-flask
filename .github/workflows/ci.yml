@@ -148,7 +148,9 @@ jobs:
           docker run --rm --user root --network host -v $(pwd):/zap/wrk/:rw \
             ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
             -t http://localhost:5000 \
-            -r zap-report.html || true
+            -r zap-report.html \
+            -J zap-report.json \
+            -X zap-report.xml || true
 
       # 4. Remove os containers para limpar a máquina após o teste
       - name: Stop containers
@@ -160,5 +162,5 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: zap-report
-          path: ./zap-report.html # 🌟 GARANTIDO: Busca o arquivo na raiz do workspace
+          name: zap-reports-triade
+          path: ./zap-report.* # 🌟 GARANTIDO: Busca o arquivo na raiz do workspace
