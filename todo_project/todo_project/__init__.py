@@ -33,4 +33,5 @@ login_manager.login_message_category = 'danger'
 bcrypt = Bcrypt(app)
 
 # IMPORTAR ROTAS NO FINAL (DEPOIS DO APP EXISTIR)
-import todo_project.routes  # noqa: E402,F401
+#import todo_project.routes  # noqa: E402,F401
+from . import routes  # noqa: E402,F401
