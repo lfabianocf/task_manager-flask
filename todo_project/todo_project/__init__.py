@@ -3,15 +3,12 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_bcrypt import Bcrypt
+from prometheus_flask_exporter import PrometheusMetrics
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '45cf93c4d41348cd9980674ade9a7356'
 
-
-# INSTANCE_DIR = "/app/data"
-# app.config['SQLALCHEMY_DATABASE_URI'] = (
-#     "sqlite:///" + os.path.join(INSTANCE_DIR, "site.db")
-# )
+metrics = PrometheusMetrics(app)
 
 # 🎛️ CONFIGURAÇÃO DINÂMICA DO BANCO DE DADOS
 # Se o arquivo de teste injetar 'TESTING = True', usamos um banco em memória
