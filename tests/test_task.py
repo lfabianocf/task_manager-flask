@@ -8,7 +8,7 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 # 2. Importa o app e o db do arquivo run.py que está dentro de todo_project
-from todo_project.run import app, db
+from todo_project import app, db
 
 @pytest.fixture
 def client():
