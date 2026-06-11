@@ -2,10 +2,16 @@ import sys
 import os
 import pytest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'todo_project'))
+# Garante que a raiz do projeto e a pasta todo_project estão no PATH
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-
-from todo_project import app
+# Se dentro de todo_project você tem o arquivo app.py:
+try:
+    from todo_project.app import app
+except ModuleNotFoundError:
+    # Caso o todo_project já seja o próprio pacote
+    from todo_project import app
 
 @pytest.fixture
 def client():
@@ -27,5 +33,3 @@ def test_login(client):
 def test_registro(client):
     rv = client.get('/register')
     assert rv.status_code == 200
-
-
