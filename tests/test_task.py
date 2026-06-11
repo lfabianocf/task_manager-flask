@@ -2,12 +2,15 @@ import sys
 import os
 import pytest
 
-# 1. Garante que a raiz do projeto (task_manager-flask) está no PATH do Python
+# Garante que a raiz do projeto (task_manager-flask) está no PATH do Python
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-# 2. Importa o app e o db do arquivo run.py que está dentro de todo_project
+# Força a variável de ambiente de teste para o __init__.py ler
+os.environ['FLASK_ENV'] = 'testing'
+
+# Importa o app e o db do arquivo run.py que está dentro de todo_project
 from todo_project import app, db
 
 @pytest.fixture
