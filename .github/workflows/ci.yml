@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI-CD Production Pipeline
 
 on:
   push:
@@ -7,6 +7,9 @@ on:
     branches: ["main", "develop"]
 
 jobs:
+  # ==========================================
+  # 🔐 1. SECURITY ANALYSIS (Static & Audit)
+  # ==========================================
   security-analysis:
     runs-on: ubuntu-latest
 
@@ -19,43 +22,79 @@ jobs:
         with:
           python-version: "3.11"
 
-      # Cache pip (melhora MUITO CI)
       - name: Cache pip
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
 
-      # Instalar dependências de segurança
-      - name: Instalar dependências
+      - name: Instalar dependências de segurança
         run: |
-          python -m pip install --upgrade pip
+          pip install --upgrade pip
           pip install bandit pip-audit
 
-      # 1. Segurança estática (Bandit)
-      - name: Rodar Bandit (SAST)
+      - name: 🔐 Bandit (SAST)
         run: |
-          bandit -r . -ll -ii -s B104 || true
+          bandit -r . -ll -ii -s B104
 
-      # 2. Auditoria de dependências (mais estável que OWASP Action)
-      - name: Rodar pip-audit (OWASP alternativa moderna)
+      - name: 🔐 pip-audit (dependências)
         run: |
-          pip audit || true
+          pip-audit
 
-      # 3. OWASP Dependency Check (versão correta)
-      - name: OWASP Dependency Check
-        uses: dependency-check/Dependency-Check_Action@main
-        with:
-          project: "task_manager"
-          path: "."
-          format: "HTML"
-          args: >
-            --failOnCVSS 7
-            --enableRetired
+  # ==========================================
+  # 🐳🚀🛡️ 2. BUILD, TEST & DAST (Ambiente Isolado)
+  # ==========================================
+  build-and-test:
+    needs: security-analysis
+    runs-on: ubuntu-latest
 
-      # 4. Upload do relatório
-      - name: Upload relatório OWASP
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      # Builda e já sobe usando o Docker Compose no mesmo ambiente
+      - name: Subir aplicação com Docker Compose
+        run: |
+          docker compose up -d --build
+
+      - name: Debug - Listar containers e Logs se falhar
+        if: always()
+        run: |
+          docker ps -a
+          docker compose logs web
+
+      - name: Healthcheck Flask
+        run: |
+          echo "Waiting for app..."
+          for i in {1..30}; do
+            if curl -s http://localhost:5000; then
+              echo "App is UP"
+              exit 0
+            fi
+            echo "attempt $i..."
+            sleep 2
+          done
+          
+          echo "=================================================="
+          echo "🚨 APLICAÇÃO FALHOU! EXIBINDO LOGS DO CONTAINER: 🚨"
+          echo "=================================================="
+          docker compose logs web
+          exit 1
+
+      - name: Rodar OWASP ZAP (DAST)
+        run: |
+          mkdir -p $(pwd)/zap_results
+          sudo chmod 777 $(pwd)/zap_results
+
+          # Mapeando a subpasta específica para o volume do ZAP
+          docker run --network host -v $(pwd)/zap_results:/zap/wrk/:rw \
+            ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py \
+            -t http://localhost:5000 \
+            -r /zap/wrk/zap-report.html \
+            -J /zap/wrk/zap-report.json || true
+      
+      - name: Upload Relatórios de Segurança ZAP
         uses: actions/upload-artifact@v4
         with:
-          name: dependency-check-report
-          path: reports/
+          name: zap-security-reports
+          path: zap_results/zap-report.*

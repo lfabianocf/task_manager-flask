@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   web:
     build: .
@@ -8,6 +6,7 @@ services:
     volumes:
       - ./data:/app/data
     environment:
-      - FLASK_ENV=development
-    command: python todo_project/run.py
-    restart: always
+      - PYTHONPATH=/app
+    # Este comando vai listar os arquivos e depois falhar, 
+    # permitindo que vejamos a estrutura real no log do GitHub.
+    command: /bin/sh -c "ls -R /app && python todo_project/run.py"
