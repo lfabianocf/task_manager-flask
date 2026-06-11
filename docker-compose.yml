@@ -5,4 +5,6 @@ services:
       - "5000:5000"
     volumes:
       - ./data:/app/data
-    command: python -m todo_project.run
+    environment:
+      # Garante que o Flask use o PYTHONPATH correto também via Compose
+      - PYTHONPATH=/app:/app/todo_project
