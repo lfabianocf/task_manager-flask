@@ -169,3 +169,41 @@ jobs:
         with:
           name: zap-reports-triade
           path: ./zap-report.* # 🌟 GARANTIDO: Busca o arquivo na raiz do workspace
+  # ... (mantendo seus jobs anteriores: test, build, security-analysis, dast-zap) ...
+
+  # =========================
+  # 🚀 5. DEPLOY EM ESTÁGIO (CD)
+  # =========================
+  deploy-stage:
+    needs: [dast-zap]
+    runs-on: ubuntu-latest
+    environment:
+      name: stage
+      url: http://seu-servidor-stage.com
+    if: github.ref == 'refs/heads/develop'
+    steps:
+      - name: Deploy Staging
+        run: |
+          echo "Simulando deploy no ambiente de estágio..."
+          # Adicione aqui o seu comando de deploy, ex: scp ou ssh para seu servidor
+          # ssh user@seu-servidor 'cd /app && docker compose pull && docker compose up -d'
+
+  # =========================
+  # 🛡️ 6. DAST PÓS-DEPLOY (STAGING)
+  # =========================
+  dast-post-deploy:
+    needs: [deploy-stage]
+    runs-on: ubuntu-latest
+    steps:
+      - name: OWASP ZAP Scan em Staging
+        run: |
+          docker run --rm -v $(pwd):/zap/wrk/:rw \
+            ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+            -t http://seu-servidor-stage.com \
+            -r zap-stage-report.html || true
+
+      - name: Upload relatório de Staging
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report-staging
+          path: ./zap-stage-report.html
