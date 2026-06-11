@@ -2,11 +2,13 @@ import sys
 import os
 import pytest
 
-# Garante que a raiz do projeto e a pasta todo_project estão no PATH
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
+# 2. Insere a raiz no PATH do Python se ela já não estiver lá
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
 # Se dentro de todo_project você tem o arquivo app.py:
+
 try:
     from todo_project.app import app
 except ModuleNotFoundError:
